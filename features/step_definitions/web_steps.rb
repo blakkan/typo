@@ -66,6 +66,7 @@ When /^(.*) within (.*[^:]):$/ do |step, parent, table_or_string|
 end
 
 Given /^(?:|I )am on (.+)$/ do |page_name|
+  puts path_to(page_name)
   visit path_to(page_name)
 end
 
