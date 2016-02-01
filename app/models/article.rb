@@ -395,6 +395,10 @@ class Article < Content
     self.body = parts[0]
     self.extended = parts[1] || ''
   end
+  
+  def body_append(string)
+    self.body = self.body + string
+  end
 
   def link_to_author?
     !user.email.blank? && blog.link_to_author

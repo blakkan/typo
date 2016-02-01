@@ -23,19 +23,46 @@ class Admin::ContentController < Admin::BaseController
     end
   end
 
+ #########################################################################
+ #
+ # JAB updated
+ #
+ #########################################################################
   def new
-    new_or_edit
+    if params[:merge_button]
+      puts "came through new"
+      merge_actions
+   #   new_or_edit
+    else
+      new_or_edit
+    end
   end
 
   def edit
+    #JAB - merging is s a special form of editing, so we won't route directly to it, but will
+    # come through here
+    
     @article = Article.find(params[:id])
     unless @article.access_by? current_user
       redirect_to :action => 'index'
       flash[:error] = _("Error, you are not allowed to perform this action")
       return
     end
-    new_or_edit
+    
+    #merge is treated as a special case of edit.
+    if params[:merge_button]
+      puts "came through edit"
+      merge_actions
+   #   new_or_edit
+    else
+      new_or_edit
+    end
+    
   end
+  
+
+  
+  
 
   def destroy
     @record = Article.find(params[:id])
@@ -139,7 +166,17 @@ class Admin::ContentController < Admin::BaseController
 
   def real_action_for(action); { 'add' => :<<, 'remove' => :delete}[action]; end
 
+
+  ##############################################################
+  #
+  #   JAB Come here to edit (or make new) article.   We're interested in editing one
+  # now effecrively new_or_edit_or_merge.    We come though here
+  # after we've come through the merge_actions routine, so we must be sure
+  # we don't undo that....
+  #
+  ##############################################################
   def new_or_edit
+    
     id = params[:id]
     id = params[:article][:id] if params[:article] && params[:article][:id]
     @article = Article.get_or_build_article(id)
@@ -182,6 +219,37 @@ class Admin::ContentController < Admin::BaseController
     @macros = TextFilter.macro_filters
     render 'new'
   end
+  
+  
+  
+  #########################################################################
+  #
+  # JAB Merge is a special version of edit; here is where we concatinate the contents,
+  # move the comments, and delete the article merged onto the current one.
+  #
+  #########################################################################
+  def merge_actions
+    puts "T+++++++++++++++++++his is new"
+    id = params[:id]
+    id = params[:article][:id] if params[:article] && params[:article][:id]
+    @article = Article.get_or_build_article(id)
+    absorbed_article = Article.get_or_build_article(params[:merge_with])
+    puts "Starting with #{id} merge in #{params[:merge_with]}"
+    #yeah, this should be done in the model
+    @article.body = @article.body + absorbed_article.body
+    #puts @article.methods.sort.join(" ")
+    @article.body_append("HI")
+    @article.save
+    puts Article.get_or_build_article(id).body_and_extended
+
+    puts "T+++++++++++++++++++hat was new"
+    
+    redirect_to :action => 'index'
+    
+  end
+  
+  
+  
 
   def set_the_flash
     case params[:action]
@@ -189,6 +257,8 @@ class Admin::ContentController < Admin::BaseController
       flash[:notice] = _('Article was successfully created')
     when 'edit'
       flash[:notice] = _('Article was successfully updated.')
+    when 'merge'  ###JAB
+      flash[:notice] = "Article was successfully merged."
     else
       raise "I don't know how to tidy up action: #{params[:action]}"
     end

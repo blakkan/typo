@@ -2,5 +2,12 @@
 <%= form_tag(form_action, :id => "#{form_type}_form", :enctype => "multipart/form-data", :class => className) do %>
 
   <%= render :partial => "form" %>
+  
+  <!-- JAB  we know we came through the merge button if the successful control has the name merge_button-->
+  <div>
+    <h3>Merge Articles</h3>
+    Article ID&nbsp;<input type="text" name="merge_with"><br>
+    <input type="submit" value="Merge" name="merge_button">
+  </div>
 
 <% end %>
