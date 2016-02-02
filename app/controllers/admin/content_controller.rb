@@ -51,7 +51,7 @@ class Admin::ContentController < Admin::BaseController
     
     #merge is treated as a special case of edit.
     if params[:merge_button]
-      puts "came through edit"
+      #puts "came through edit"
       merge_actions
    #   new_or_edit
     else
@@ -227,22 +227,38 @@ class Admin::ContentController < Admin::BaseController
   # JAB Merge is a special version of edit; here is where we concatinate the contents,
   # move the comments, and delete the article merged onto the current one.
   #
+  # This is a hack and slash job, suitable for schoolwork.   If I were a 
+  # better man, I would put this into the article model.   But I'm not,
+  # so I won't.
+  #
   #########################################################################
   def merge_actions
-    puts "T+++++++++++++++++++his is new"
+    # this was cloned from new or edit; identify the article to receive the merge
     id = params[:id]
     id = params[:article][:id] if params[:article] && params[:article][:id]
     @article = Article.get_or_build_article(id)
+    
+    # find the article which will be assimilated
     absorbed_article = Article.get_or_build_article(params[:merge_with])
-    puts "Starting with #{id} merge in #{params[:merge_with]}"
-    #yeah, this should be done in the model
+    
+    #step 1: concatinate the new onto the old
     @article.body = @article.body + absorbed_article.body
-    #puts @article.methods.sort.join(" ")
-    @article.body_append("HI")
-    @article.save
-    puts Article.get_or_build_article(id).body_and_extended
+    
+    #step 2: move the comments over (Just move their foreign keys)
+    puts "absorbee comments"
+    absorbed_article.comments.each { |x|
+      x.article_id = id.to_i    #This is really bad.... violates all that's good and right about MVC
+      x.save
+    }
 
-    puts "T+++++++++++++++++++hat was new"
+    
+    #step 3: Destroy the assimilee (since the comments are moved, this should
+    # not destroy them.)
+    absorbed_article.destroy
+
+    #step 4: And now save the fuit of our labor.
+    
+    @article.save
     
     redirect_to :action => 'index'
     
